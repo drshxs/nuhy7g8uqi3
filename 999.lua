@@ -6,7 +6,7 @@ end
 loadstring(game:HttpGet('https://raw.githubusercontent.com/drillygzzly/Roblox-UI-Libs/main/Yun%20V2%20Lib/Yun%20V2%20Lib%20Source.lua'))()
 
 local Library = initLibrary()
-local Window = Library:Load({name = "Signal", sizeX = 425, sizeY = 512, color = Color3.fromRGB(255, 255, 255)})
+local Window = Library:Load({name = "Signal", sizeX = 425, sizeY = 300, color = Color3.fromRGB(255, 255, 255)})
 
 local userInput = game:GetService("UserInputService")
 local runService = game:GetService("RunService")
