@@ -28,16 +28,10 @@ local teamCheckEnabled = false
 local targetPart = "Head"
 local smoothing = 0
 local lockedTarget = nil
-
 local lineESPEnabled = false
 local lineESP = {}
 local headESPEnabled = false
 local headESP = {}
-local boxESPEnabled = false
-local boxESP = {}
-local soundESPEnabled = false
-local soundESP = {}
-local playerSpeeds = {}
 
 Aimingsec1:Toggle {
     Name = "Enabled",
@@ -108,38 +102,6 @@ Visualssec1:Toggle {
     end
 }
 
-Visualssec1:Toggle {
-    Name = "Box ESP",
-    flag = "boxESP",
-    callback = function(bool)
-        boxESPEnabled = bool
-        if not boxESPEnabled then
-            for _, esp in pairs(boxESP) do
-                if esp then
-                    esp:Remove()
-                end
-            end
-            boxESP = {}
-        end
-    end
-}
-
-Visualssec1:Toggle {
-    Name = "Sound ESP",
-    flag = "soundESP",
-    callback = function(bool)
-        soundESPEnabled = bool
-        if not soundESPEnabled then
-            for _, esp in pairs(soundESP) do
-                if esp then
-                    esp:Remove()
-                end
-            end
-            soundESP = {}
-        end
-    end
-}
-
 MiscSec:Button {
     Name = "Unload UI",
     callback = function()
@@ -158,19 +120,9 @@ players.PlayerRemoving:Connect(function(player)
         headESP[player]:Remove()
         headESP[player] = nil
     end
-    if boxESP[player] then
-        boxESP[player]:Remove()
-        boxESP[player] = nil
-    end
-    if soundESP[player] then
-        soundESP[player]:Remove()
-        soundESP[player] = nil
-    end
-    playerSpeeds[player] = nil
 end)
 
 runService.Heartbeat:Connect(function()
-    -- Line ESP
     if lineESPEnabled then
         for _, player in pairs(players:GetPlayers()) do
             if player ~= localPlayer and player.Character and player.Character:FindFirstChild("Head") then
@@ -207,7 +159,6 @@ runService.Heartbeat:Connect(function()
         end
     end
 
-    -- Head ESP
     if headESPEnabled then
         for _, player in pairs(players:GetPlayers()) do
             if player ~= localPlayer and player.Character and player.Character:FindFirstChild("Head") then
@@ -246,88 +197,57 @@ runService.Heartbeat:Connect(function()
         end
     end
 
-    -- Box ESP
-    if boxESPEnabled then
-        for _, player in pairs(players:GetPlayers()) do
-            if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                if teamCheckEnabled and player.Team == localPlayer.Team then
-                    if boxESP[player] then
-                        boxESP[player].Visible = false
-                    end
-                    continue
-                end
+    if holdingRMB and lockedTarget then
+        local targetChar = lockedTarget.Character
+        if targetChar and targetChar:FindFirstChild(targetPart) then
+            local targetPos = targetChar[targetPart].Position
+            local direction = (targetPos - camera.CFrame.Position).Unit
+            local smoothFactor = math.max(0.1, (30 - smoothing) / 30)
 
-                if not boxESP[player] then
-                    local box = Drawing.new("Square")
-                    box.Thickness = 1
-                    box.Transparency = 1
-                    box.Color = Color3.fromRGB(255, 255, 255)
-                    box.Filled = false
-                    boxESP[player] = box
-                end
-
-                local char = player.Character
-                local rootPart = char.HumanoidRootPart
-                local screenPos, onScreen = camera:WorldToViewportPoint(rootPart.Position)
-                local box = boxESP[player]
-
-                if onScreen then
-                    local size = Vector3.new(4, 7, 0)
-                    local corners = {
-                        camera:WorldToViewportPoint(rootPart.Position + Vector3.new(-size.X, size.Y, 0)),
-                        camera:WorldToViewportPoint(rootPart.Position + Vector3.new(size.X, size.Y, 0)),
-                        camera:WorldToViewportPoint(rootPart.Position + Vector3.new(size.X, -size.Y, 0)),
-                        camera:WorldToViewportPoint(rootPart.Position + Vector3.new(-size.X, -size.Y, 0))
-                    }
-
-                    box.PointA = Vector2.new(corners[1].X, corners[1].Y)
-                    box.PointB = Vector2.new(corners[2].X, corners[2].Y)
-                    box.PointC = Vector2.new(corners[3].X, corners[3].Y)
-                    box.PointD = Vector2.new(corners[4].X, corners[4].Y)
-                    box.Visible = true
-                else
-                    box.Visible = false
-                end
-            elseif boxESP[player] then
-                boxESP[player]:Remove()
-                boxESP[player] = nil
-            end
-        end
-    end
-
-    -- Sound ESP
-    if soundESPEnabled then
-        for _, player in pairs(players:GetPlayers()) do
-            if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                local char = player.Character
-                local rootPart = char.HumanoidRootPart
-                local currentPosition = rootPart.Position
-                local lastPosition = playerSpeeds[player] and playerSpeeds[player].lastPosition or currentPosition
-                local velocity = (currentPosition - lastPosition).Magnitude / (1 / 60)
-                playerSpeeds[player] = {speed = velocity, lastPosition = currentPosition}
-
-                if not soundESP[player] then
-                    local circle = Drawing.new("Circle")
-                    circle.Thickness = 2
-                    circle.Transparency = 1
-                    circle.Color = Color3.fromRGB(255, 255, 255)
-                    soundESP[player] = circle
-                end
-
-                local circle = soundESP[player]
-                local screenPos, onScreen = camera:WorldToViewportPoint(currentPosition)
-
-                if onScreen then
-                    circle.Position = Vector2.new(screenPos.X, screenPos.Y)
-                    circle.Radius = math.clamp(playerSpeeds[player].speed * 3, 10, 100)
-                    circle.Visible = true
-                else
-                    circle.Visible = false
-                end
-            elseif soundESP[player] then
-                soundESP[player]:Remove()
-                soundESP[player] = nil
-            end
+            camera.CFrame = CFrame.new(camera.CFrame.Position, camera.CFrame.Position + camera.CFrame.LookVector:Lerp(direction, smoothFactor))
+        else
+            lockedTarget = nil
         end
     end
 end)
+
+userInput.InputBegan:Connect(function(input, gameProcessed)
+    if aimingEnabled and input.UserInputType == Enum.UserInputType.MouseButton2 then
+        if not holdingRMB then
+            holdingRMB = true
+            lockedTarget = getClosestPlayerToCursor()
+        end
+    end
+end)
+
+userInput.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton2 then
+        holdingRMB = false
+        lockedTarget = nil
+    end
+end)
+
+function getClosestPlayerToCursor()
+    local mouse = localPlayer:GetMouse()
+    local closestPlayer = nil
+    local closestDistance = math.huge
+
+    for _, player in pairs(players:GetPlayers()) do
+        if player ~= localPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            if teamCheckEnabled and player.Team == localPlayer.Team then
+                continue
+            end
+
+            local screenPos, onScreen = camera:WorldToViewportPoint(player.Character.HumanoidRootPart.Position)
+            if onScreen then
+                local distance = (Vector2.new(mouse.X, mouse.Y) - Vector2.new(screenPos.X, screenPos.Y)).Magnitude
+                if distance < closestDistance then
+                    closestPlayer = player
+                    closestDistance = distance
+                end
+            end
+        end
+    end
+
+    return closestPlayer
+end
