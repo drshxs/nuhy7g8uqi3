@@ -174,7 +174,7 @@ runService.Heartbeat:Connect(function()
                     circle.Thickness = 1
                     circle.Transparency = 1
                     circle.Color = Color3.fromRGB(255, 255, 255)
-                    circle.FillTransparency = 0.6
+                    circle.FillTransparency = 1
                     headESP[player] = circle
                 end
 
