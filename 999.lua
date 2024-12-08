@@ -172,9 +172,9 @@ runService.Heartbeat:Connect(function()
                 if not headESP[player] then
                     local circle = Drawing.new("Circle")
                     circle.Thickness = 1
-                    circle.Transparency = 1
-                    circle.Color = Color3.fromRGB(255, 255, 255)
-                    circle.FillTransparency = 1
+                    circle.Transparency = 1 -- Controls the outline's visibility
+                    circle.FillTransparency = 1 -- Fully transparent fill
+                    circle.Color = Color3.fromRGB(255, 255, 255) -- White outline
                     headESP[player] = circle
                 end
 
